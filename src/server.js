@@ -1,7 +1,7 @@
 import express  from 'express';
 import {routes} from "./routes/main.routes.js";
 import cors from 'cors'
-
+require('dotenv').config();
 
 export default async () => {
     const port = process.env.SERVER_PORT;
