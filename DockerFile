@@ -1,0 +1,20 @@
+# Usa una imagen base de Node.js
+FROM node:alpine
+
+# Establece el directorio de trabajo en la carpeta de la aplicación
+WORKDIR /usr/src/app
+
+# Copia el archivo de dependencias y el archivo de bloqueo
+COPY package*.json ./
+
+# Instala las dependencias
+RUN npm install --production=true
+
+# Copia los archivos de la aplicación
+COPY . .
+
+# Expone el puerto en el que se ejecutará la aplicación
+EXPOSE 3100
+
+# Comando para iniciar la aplicación
+CMD ["node", "main.js"]
