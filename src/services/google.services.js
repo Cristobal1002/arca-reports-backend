@@ -1,11 +1,45 @@
-import {google} from "googleapis";
-import {GoogleAuth} from 'google-auth-library'
-import {CustomError} from '../errors/errors.main.js'
+import { google } from "googleapis";
+import { GoogleAuth } from 'google-auth-library';
+import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import AWS from 'aws-sdk';
+import { CustomError } from '../errors/errors.main.js';
 
-const getClient = async () => {
-    const cred = process.env.GOOGLE_AUTH_JSON_PATH
+export const retrieveSecret = async () => {
+    const secretName = "googleApiSecret";
+    try {
+        // Crear una instancia del cliente de Secrets Manager con las credenciales proporcionadas
+        const client = new AWS.SecretsManager({
+            region: "us-east-1",
+            credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY,
+                secretAccessKey: process.env.AWS_SECRET_KEY
+            }
+        });
+
+        const data = await client.getSecretValue({ SecretId: secretName }).promise();
+
+        // Devolver los datos de respuesta
+        return { data: JSON.parse(data.SecretString) };
+    } catch (error) {
+        console.error('Error al recuperar el secreto:', error);
+        throw error;
+    }
+};
+
+async function getClient() {
+    const secret = await retrieveSecret();
+    console.log('Secret:',secret)
     const auth = new GoogleAuth({
-        keyFile: cred,
+        credentials: {
+            type: secret.data.type,
+            project_id: secret.data.project_id,
+            private_key_id: secret.data.private_key_id,
+            private_key:secret.data.private_key,
+            client_email:secret.data.client_email,
+            client_id: secret.data.client_id,
+            client_secret: secret.data.client_secret,
+            redirect_uris: secret.data.redirect_uris,
+        },
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
     return auth.getClient();
@@ -23,9 +57,9 @@ export const saveRegister = async (spreadsheetId, range, data) => {
                 values: data,
             },
         });
-        return {data:response.data, error:null, warning:null}
+        return { data: response.data, error: null, warning: null };
     } catch (error) {
-        console.error('Error al añadir datos a la hoja de cálculo:', error);
-        return {error: error.errors}
+        console.error('Error adding data to spreadsheet:', error);
+        return { error: error.errors };
     }
-}
+};
